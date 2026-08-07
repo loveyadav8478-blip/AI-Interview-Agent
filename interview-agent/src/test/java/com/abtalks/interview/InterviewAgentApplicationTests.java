@@ -1,4 +1,4 @@
-package com.abtalks.interview_agent;
+package com.abtalks.interview;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
