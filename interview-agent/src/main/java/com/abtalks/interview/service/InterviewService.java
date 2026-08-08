@@ -16,6 +16,8 @@ import java.util.UUID;
 @Service
 public class InterviewService {
 
+    private final FeedbackService feedbackService;
+
     private final JsonCandidateRepository candidateRepository;
 
     private final ProgressTracker progressTracker;
@@ -29,20 +31,21 @@ public class InterviewService {
     private final QuestionGenerationService questionGenerationService;
 
     public InterviewService(
-            JsonCandidateRepository candidateRepository, ProgressTracker progressTracker,
+            JsonCandidateRepository candidateRepository,
             SessionManager sessionManager,
             InterviewPlanner interviewPlanner,
             QuestionGenerationService questionGenerationService,
-            AnswerEvaluationService answerEvaluationService) {
+            AnswerEvaluationService answerEvaluationService,
+            ProgressTracker progressTracker,
+            FeedbackService feedbackService) {
 
         this.candidateRepository = candidateRepository;
-        this.progressTracker = progressTracker;
         this.sessionManager = sessionManager;
         this.interviewPlanner = interviewPlanner;
-        this.questionGenerationService =
-                questionGenerationService;
-        this.answerEvaluationService =
-                answerEvaluationService;
+        this.questionGenerationService = questionGenerationService;
+        this.answerEvaluationService = answerEvaluationService;
+        this.progressTracker = progressTracker;
+        this.feedbackService = feedbackService;
     }
 
     public InterviewResponse handleRequest(
@@ -149,6 +152,11 @@ public class InterviewService {
         if (decision.getAction()
                 == PlannerAction.COMPLETE_INTERVIEW) {
 
+            Feedback feedback =
+                    feedbackService.generateFeedback(
+                            session
+                    );
+
             session.setStatus(
                     InterviewStatus.COMPLETED
             );
@@ -161,7 +169,7 @@ public class InterviewService {
                             "Thank you. The interview is complete."
                     )
                     .done(true)
-                    .feedback(null)
+                    .feedback(feedback)
                     .build();
         }
 

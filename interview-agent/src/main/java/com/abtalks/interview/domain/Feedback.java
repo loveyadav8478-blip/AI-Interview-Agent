@@ -10,6 +10,12 @@ import java.util.List;
 @AllArgsConstructor
 public class Feedback {
 
+    private Double overallScore;
+
+    private Integer questionsAsked;
+
+    private Integer curriculumDaysCovered;
+
     private String summary;
 
     private List<String> strengths;
