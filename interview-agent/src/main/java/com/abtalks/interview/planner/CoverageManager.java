@@ -1,6 +1,7 @@
 package com.abtalks.interview.planner;
 
 import com.abtalks.interview.domain.InterviewSession;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
@@ -9,9 +10,16 @@ import java.util.Set;
 @Component
 public class CoverageManager {
 
-    private static final int MIN_QUESTIONS = 8;
+    private final int MIN_QUESTIONS;
+    private final int MIN_CURRICULUM_DAYS;
 
-    private static final int MIN_CURRICULUM_DAYS = 4;
+    public CoverageManager(
+            @Value("${interview.minimum-questions}") int MIN_QUESTIONS,
+            @Value("${interview.minimum-curriculum-days}") int MIN_CURRICULUM_DAYS) {
+
+        this.MIN_CURRICULUM_DAYS = MIN_CURRICULUM_DAYS;
+        this.MIN_QUESTIONS = MIN_QUESTIONS;
+    }
 
     public boolean hasMinimumQuestions(
             InterviewSession session) {

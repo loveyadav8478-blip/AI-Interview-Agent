@@ -12,3 +12,10 @@ spring:
         chat:
           model: gemini-3.5-flash
           temperature: 0.3
+
+llm:
+  provider: mock
+
+interview:
+  minimum-questions: 8
+  minimum-curriculum-days: 4
