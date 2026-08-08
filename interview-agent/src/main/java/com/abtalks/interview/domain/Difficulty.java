@@ -1,4 +1,11 @@
 package com.abtalks.interview.domain;
 
-public class Difficulty {
+public enum Difficulty {
+
+    EASY,
+
+    MEDIUM,
+
+    HARD
+
 }

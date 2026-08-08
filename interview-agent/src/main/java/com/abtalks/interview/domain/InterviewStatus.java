@@ -1,4 +1,11 @@
 package com.abtalks.interview.domain;
 
-public class InterviewStatus {
+public enum InterviewStatus {
+
+    STARTED,
+
+    ONGOING,
+
+    COMPLETED
+
 }
