@@ -31,9 +31,10 @@ public class InterviewPlanner {
             InterviewSession session) {
 
         CurriculumDay day =
-                topicSelector.selectInitialTopic(session);
+                topicSelector.selectNextTopic(session);
 
-        session.getProgress().setCurrentDay(day.getDay());
+        session.getProgress()
+                .setCurrentDay(day.getDay());
 
         return PlannerDecision.builder()
                 .action(PlannerAction.ASK_NEW_TOPIC)
@@ -43,7 +44,9 @@ public class InterviewPlanner {
                         session.getProgress()
                                 .getCurrentDifficulty()
                 )
-                .reason("Initial interview topic selected")
+                .reason(
+                        "Initial topic selected based on candidate progress"
+                )
                 .build();
     }
 
@@ -51,16 +54,10 @@ public class InterviewPlanner {
             InterviewSession session,
             Evaluation evaluation) {
 
-        if (coverageManager.canCompleteInterview(session)) {
-
-            return PlannerDecision.builder()
-                    .action(PlannerAction.COMPLETE_INTERVIEW)
-                    .reason(
-                            "Minimum interview requirements satisfied"
-                    )
-                    .build();
-        }
-
+        /*
+         * First update difficulty based on the
+         * latest evaluation.
+         */
         Difficulty nextDifficulty =
                 difficultyManager.determineNextDifficulty(
                         evaluation,
@@ -71,25 +68,76 @@ public class InterviewPlanner {
         session.getProgress()
                 .setCurrentDifficulty(nextDifficulty);
 
-        if (followUpDecisionEngine.shouldAskFollowUp(evaluation)) {
+        /*
+         * Requirement #1:
+         * minimum 8 questions
+         * AND
+         * minimum 4 curriculum days.
+         */
+        if (coverageManager.canCompleteInterview(session)) {
+
+            return PlannerDecision.builder()
+                    .action(PlannerAction.COMPLETE_INTERVIEW)
+                    .reason(
+                            "Minimum interview requirements satisfied"
+                    )
+                    .build();
+        }
+
+        /*
+         * Requirement #2:
+         * We still need curriculum coverage.
+         */
+        if (!coverageManager.hasMinimumCurriculumCoverage(
+                session)) {
+
+            CurriculumDay nextDay =
+                    topicSelector.selectNextTopic(session);
+
+            session.getProgress()
+                    .setCurrentDay(nextDay.getDay());
+
+            return PlannerDecision.builder()
+                    .action(PlannerAction.ASK_NEW_TOPIC)
+                    .curriculumDay(nextDay.getDay())
+                    .topic(nextDay.getTitle())
+                    .difficulty(nextDifficulty)
+                    .reason(
+                            "Additional curriculum coverage required"
+                    )
+                    .build();
+        }
+
+        /*
+         * Requirement #3:
+         * Coverage is sufficient, so use
+         * evaluation to determine whether
+         * deeper probing is useful.
+         */
+        if (followUpDecisionEngine
+                .shouldAskFollowUp(evaluation)) {
 
             return PlannerDecision.builder()
                     .action(PlannerAction.ASK_FOLLOW_UP)
                     .curriculumDay(
-                            session.getProgress().getCurrentDay()
+                            session.getProgress()
+                                    .getCurrentDay()
                     )
                     .topic(
                             getCurrentTopic(session)
                     )
                     .difficulty(nextDifficulty)
                     .reason(
-                            "Previous answer requires deeper probing"
+                            "Candidate answer requires deeper probing"
                     )
                     .build();
         }
 
+        /*
+         * Otherwise move to a new topic.
+         */
         CurriculumDay nextDay =
-                topicSelector.selectInitialTopic(session);
+                topicSelector.selectNextTopic(session);
 
         session.getProgress()
                 .setCurrentDay(nextDay.getDay());
@@ -99,7 +147,9 @@ public class InterviewPlanner {
                 .curriculumDay(nextDay.getDay())
                 .topic(nextDay.getTitle())
                 .difficulty(nextDifficulty)
-                .reason("Moving to a new curriculum topic")
+                .reason(
+                        "Moving to another curriculum topic"
+                )
                 .build();
     }
 

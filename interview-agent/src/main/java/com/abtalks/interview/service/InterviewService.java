@@ -5,6 +5,7 @@ import com.abtalks.interview.dto.InterviewRequest;
 import com.abtalks.interview.dto.InterviewResponse;
 import com.abtalks.interview.model.profile.Candidate;
 import com.abtalks.interview.planner.InterviewPlanner;
+import com.abtalks.interview.planner.ProgressTracker;
 import com.abtalks.interview.repository.JsonCandidateRepository;
 import com.abtalks.interview.session.SessionManager;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,10 @@ public class InterviewService {
 
     private final JsonCandidateRepository candidateRepository;
 
+    private final ProgressTracker progressTracker;
+
+    private final AnswerEvaluationService answerEvaluationService;
+
     private final SessionManager sessionManager;
 
     private final InterviewPlanner interviewPlanner;
@@ -24,15 +29,20 @@ public class InterviewService {
     private final QuestionGenerationService questionGenerationService;
 
     public InterviewService(
-            JsonCandidateRepository candidateRepository,
+            JsonCandidateRepository candidateRepository, ProgressTracker progressTracker,
             SessionManager sessionManager,
             InterviewPlanner interviewPlanner,
-            QuestionGenerationService questionGenerationService) {
+            QuestionGenerationService questionGenerationService,
+            AnswerEvaluationService answerEvaluationService) {
 
         this.candidateRepository = candidateRepository;
+        this.progressTracker = progressTracker;
         this.sessionManager = sessionManager;
         this.interviewPlanner = interviewPlanner;
-        this.questionGenerationService = questionGenerationService;
+        this.questionGenerationService =
+                questionGenerationService;
+        this.answerEvaluationService =
+                answerEvaluationService;
     }
 
     public InterviewResponse handleRequest(
@@ -125,7 +135,7 @@ public class InterviewService {
         currentTurn.setAnswer(request.getMessage());
 
         Evaluation evaluation =
-                evaluateAnswer(currentTurn);
+                answerEvaluationService.evaluate(currentTurn);
 
         session.getEvaluations()
                 .add(evaluation);
@@ -232,43 +242,43 @@ public class InterviewService {
                 .add(turn);
     }
 
-    private Evaluation evaluateAnswer(
-            ConversationTurn turn) {
-
-        /*
-         * Temporary implementation.
-         *
-         * We will replace this with the real
-         * EvaluationService + LLM structured output.
-         */
-
-        Evaluation evaluation =
-                new Evaluation();
-
-        evaluation.setQuestionNumber(
-                turn.getQuestionNumber()
-        );
-
-        evaluation.setScore(7.0);
-
-        evaluation.setStrengths(
-                java.util.List.of(
-                        "Candidate provided a relevant response"
-                )
-        );
-
-        evaluation.setWeaknesses(
-                java.util.List.of(
-                        "Further technical depth can be explored"
-                )
-        );
-
-        evaluation.setReasoning(
-                "Temporary mock evaluation"
-        );
-
-        evaluation.setFollowUpNeeded(true);
-
-        return evaluation;
-    }
+//    private Evaluation evaluateAnswer(
+//            ConversationTurn turn) {
+//
+//        /*
+//         * Temporary implementation.
+//         *
+//         * We will replace this with the real
+//         * EvaluationService + LLM structured output.
+//         */
+//
+//        Evaluation evaluation =
+//                new Evaluation();
+//
+//        evaluation.setQuestionNumber(
+//                turn.getQuestionNumber()
+//        );
+//
+//        evaluation.setScore(7.0);
+//
+//        evaluation.setStrengths(
+//                java.util.List.of(
+//                        "Candidate provided a relevant response"
+//                )
+//        );
+//
+//        evaluation.setWeaknesses(
+//                java.util.List.of(
+//                        "Further technical depth can be explored"
+//                )
+//        );
+//
+//        evaluation.setReasoning(
+//                "Temporary mock evaluation"
+//        );
+//
+//        evaluation.setFollowUpNeeded(true);
+//
+//        return evaluation;
+//    }
 }

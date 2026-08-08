@@ -1,3 +1,14 @@
 spring:
   application:
     name: interview-agent
+  ai:
+    model:
+      chat: google-genai
+
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+
+        chat:
+          model: gemini-3.5-flash
+          temperature: 0.3

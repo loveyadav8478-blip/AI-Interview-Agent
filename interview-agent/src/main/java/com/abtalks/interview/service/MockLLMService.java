@@ -13,4 +13,22 @@ public class MockLLMService implements LLMService {
         return "Explain the core concept behind this topic and "
                 + "describe how you would apply it in a real system.";
     }
+
+    @Override
+    public String generateJson(String prompt) {
+
+        return """
+                {
+                  "score": 7.0,
+                  "strengths": [
+                    "Candidate demonstrates a basic understanding of the concept."
+                  ],
+                  "weaknesses": [
+                    "Candidate could provide more implementation-level detail."
+                  ],
+                  "reasoning": "The candidate demonstrates reasonable conceptual understanding but lacks deeper technical explanation.",
+                  "followUpNeeded": true
+                }
+                """;
+    }
 }

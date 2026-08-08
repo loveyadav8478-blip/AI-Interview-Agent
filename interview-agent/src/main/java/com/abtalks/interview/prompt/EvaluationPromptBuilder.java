@@ -28,46 +28,78 @@ public class EvaluationPromptBuilder {
                                 ));
 
         return """
-                You are evaluating a candidate during a technical interview.
+        [OUTPUT_TYPE=EVALUATION]
 
-                CURRICULUM TOPIC
-                Day: %d
-                Topic: %s
+        You are evaluating a candidate during a technical interview.
 
-                LEARNING OBJECTIVES
-                %s
+        Evaluate ONLY the candidate's technical response.
 
-                QUESTION
-                %s
+        Use the curriculum objectives as the evaluation criteria.
 
-                CANDIDATE ANSWER
-                %s
+        Do not penalize:
+        - grammar
+        - spelling
+        - writing style
+        - brevity by itself
 
-                Evaluate the answer based on:
+        Do penalize:
+        - factual errors
+        - missing important concepts
+        - incorrect reasoning
+        - inability to explain implementation details
+        - contradictions
 
-                1. Technical correctness
-                2. Understanding of the concept
-                3. Depth of explanation
-                4. Practical reasoning
-                5. Alignment with the learning objectives
+        Score from 0 to 10.
 
-                Provide:
+        Score guidance:
 
-                - Score from 0 to 10
-                - Strengths
-                - Weaknesses
-                - Whether a follow-up question is needed
+        0-2:
+        Fundamentally incorrect or no meaningful understanding.
 
-                Do not judge grammar or writing style unless
-                it affects technical clarity.
+        3-4:
+        Limited understanding with major gaps.
 
-                Return the evaluation in structured JSON.
-                """.formatted(
+        5-6:
+        Basic understanding but lacks depth.
+
+        7-8:
+        Strong understanding with minor gaps.
+
+        9-10:
+        Excellent technical depth and practical reasoning.
+
+        CURRICULUM TOPIC
+        Day: %d
+        Topic: %s
+
+        LEARNING OBJECTIVES
+        %s
+
+        QUESTION
+        %s
+
+        CANDIDATE ANSWER
+        %s
+
+        Return ONLY valid JSON.
+
+        Required JSON structure:
+
+        {
+          "questionNumber": %d,
+          "score": 0.0,
+          "strengths": [],
+          "weaknesses": [],
+          "reasoning": "",
+          "followUpNeeded": true
+        }
+        """.formatted(
                 day.getDay(),
                 day.getTitle(),
                 String.join("\n- ", day.getObjectives()),
                 turn.getQuestion(),
-                turn.getAnswer()
+                turn.getAnswer(),
+                turn.getQuestionNumber()
         );
     }
 }

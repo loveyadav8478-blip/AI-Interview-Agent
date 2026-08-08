@@ -10,9 +10,11 @@ import java.util.Set;
 public class CoverageManager {
 
     private static final int MIN_QUESTIONS = 8;
+
     private static final int MIN_CURRICULUM_DAYS = 4;
 
-    public boolean hasMinimumQuestions(InterviewSession session) {
+    public boolean hasMinimumQuestions(
+            InterviewSession session) {
 
         return session.getProgress()
                 .getQuestionCount() >= MIN_QUESTIONS;
@@ -21,12 +23,12 @@ public class CoverageManager {
     public boolean hasMinimumCurriculumCoverage(
             InterviewSession session) {
 
-        Set<Integer> coveredDays = getCoveredDays(session);
-
-        return coveredDays.size() >= MIN_CURRICULUM_DAYS;
+        return getCoveredDays(session).size()
+                >= MIN_CURRICULUM_DAYS;
     }
 
-    public boolean canCompleteInterview(InterviewSession session) {
+    public boolean canCompleteInterview(
+            InterviewSession session) {
 
         return hasMinimumQuestions(session)
                 && hasMinimumCurriculumCoverage(session);
@@ -35,11 +37,11 @@ public class CoverageManager {
     public Set<Integer> getCoveredDays(
             InterviewSession session) {
 
-        if (session.getConversationHistory() == null) {
-            return new HashSet<>();
-        }
-
         Set<Integer> days = new HashSet<>();
+
+        if (session.getConversationHistory() == null) {
+            return days;
+        }
 
         session.getConversationHistory()
                 .forEach(turn -> {
@@ -47,7 +49,6 @@ public class CoverageManager {
                     if (turn.getCurriculumDay() != null) {
                         days.add(turn.getCurriculumDay());
                     }
-
                 });
 
         return days;

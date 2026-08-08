@@ -68,3 +68,110 @@ The evaluator produces:
 Evaluation is structured so that the deterministic planner
 can use the result to decide whether to continue probing,
 change difficulty, or move to another topic.
+
+---
+
+## Prompt 003 — Technical Answer Evaluation
+
+### Purpose
+
+Evaluate a candidate's answer against the learning objectives
+of the curriculum topic being discussed.
+
+### Inputs
+
+- Curriculum day
+- Topic
+- Learning objectives
+- Interview question
+- Candidate answer
+
+### Evaluation Dimensions
+
+- Technical correctness
+- Conceptual understanding
+- Depth
+- Practical reasoning
+- Alignment with curriculum objectives
+
+### Output
+
+The model returns structured JSON containing:
+
+- score
+- strengths
+- weaknesses
+- reasoning
+- followUpNeeded
+
+### Important Design Decision
+
+The candidate's historical learning signals are contextual
+information only. They do not directly determine the interview
+score.
+
+The actual answer is evaluated against the relevant curriculum
+objectives.
+
+### Why Structured Output?
+
+The planner needs machine-readable evaluation results to make
+deterministic decisions about follow-ups and difficulty.
+
+---
+
+## Prompt 004 — Adaptive Question Generation
+
+### Design Principle
+
+The LLM does not independently decide the interview strategy.
+
+The deterministic Interview Planner first decides:
+
+- Whether to ask a follow-up.
+- Whether to move to a new curriculum topic.
+- Which curriculum day to use.
+- What difficulty to use.
+- Whether the interview should continue.
+
+The LLM receives this decision as context and converts it
+into natural interviewer language.
+
+### Reason
+
+This prevents the model from accidentally violating hard
+application requirements such as minimum question count and
+curriculum coverage.
+
+It also makes the interview flow deterministic, testable,
+and easier to debug.
+
+---
+
+## Prompt 005 — Structured LLM Output
+
+### Question Generation
+
+Question generation uses normal text output because the result
+is directly displayed to the candidate.
+
+### Answer Evaluation
+
+Answer evaluation uses structured JSON output.
+
+Required fields:
+
+- score
+- strengths
+- weaknesses
+- reasoning
+- followUpNeeded
+
+### Engineering Decision
+
+The application uses separate LLM operations for text generation
+and structured evaluation rather than relying on one generic
+generation method.
+
+This allows the application to enforce a machine-readable
+contract for evaluation results.

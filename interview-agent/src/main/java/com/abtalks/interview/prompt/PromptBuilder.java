@@ -45,6 +45,7 @@ public class PromptBuilder {
                 getPreviousAnswer(session);
 
         return """
+                [OUTPUT_TYPE=QUESTION]
                 You are a senior technical interviewer conducting
                 a realistic technical interview.
 

@@ -10,10 +10,12 @@ public class TopicProgress {
 
     private Integer day;
 
-    private Integer questionsAsked;
+    private Integer questionsAsked = 0;
 
-    private Double averageScore;
+    private Double averageScore = 0.0;
 
-    private Boolean mastered;
+    private Integer followUpsAsked = 0;
+
+    private Boolean mastered = false;
 
 }
