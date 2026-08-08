@@ -15,6 +15,8 @@ public class InterviewSession {
 
     private Candidate candidate;
 
+    private InterviewStatus status;
+
     private InterviewProgress progress;
 
     private List<ConversationTurn> conversationHistory;

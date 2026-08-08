@@ -9,6 +9,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Evaluation {
+    private String reasoning;
 
     private Integer questionNumber;
 
