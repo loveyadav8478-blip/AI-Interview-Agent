@@ -1,6 +1,7 @@
 package com.abtalks.interview.dto;
 
 import com.abtalks.interview.domain.Feedback;
+import com.abtalks.interview.domain.InterviewProgressResponse;
 import lombok.*;
 
 @Getter
@@ -17,4 +18,6 @@ public class InterviewResponse {
     private boolean done;
 
     private Feedback feedback;
+
+    private InterviewProgressResponse progress;
 }

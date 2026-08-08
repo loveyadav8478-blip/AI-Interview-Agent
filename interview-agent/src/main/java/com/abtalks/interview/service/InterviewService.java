@@ -3,6 +3,9 @@ package com.abtalks.interview.service;
 import com.abtalks.interview.domain.*;
 import com.abtalks.interview.dto.InterviewRequest;
 import com.abtalks.interview.dto.InterviewResponse;
+import com.abtalks.interview.exception.CandidateNotFoundException;
+import com.abtalks.interview.exception.InterviewCompleteException;
+import com.abtalks.interview.exception.SessionNotFoundException;
 import com.abtalks.interview.model.profile.Candidate;
 import com.abtalks.interview.planner.InterviewPlanner;
 import com.abtalks.interview.planner.ProgressTracker;
@@ -50,6 +53,13 @@ public class InterviewService {
 
     public InterviewResponse handleRequest(
             InterviewRequest request) {
+        Candidate candidate = candidateRepository
+                .findById(request.getCandidate())
+                .orElseThrow(() ->
+                        new CandidateNotFoundException(
+                                "Candidate not found: " + request.getCandidate()
+                        )
+                );
 
         if (request.getSessionId() == null
                 || request.getSessionId().isBlank()) {
@@ -119,15 +129,13 @@ public class InterviewService {
                 sessionManager
                         .getSession(request.getSessionId())
                         .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "Interview session not found: "
-                                                + request.getSessionId()
-                                ));
+                                new SessionNotFoundException("Interview session not found: " +
+                                        request.getSessionId()));
 
         if (session.getStatus()
                 == InterviewStatus.COMPLETED) {
 
-            throw new IllegalStateException(
+            throw new InterviewCompleteException(
                     "Interview is already completed"
             );
         }
