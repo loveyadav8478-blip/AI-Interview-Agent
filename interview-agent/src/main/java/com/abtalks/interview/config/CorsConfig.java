@@ -19,7 +19,7 @@ public class CorsConfig {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:3000",
-                "https://your-frontend.vercel.app"
+                "https://ai-interview-agent-eight-mu.vercel.app/"
         ));
 
         configuration.setAllowedMethods(List.of(
