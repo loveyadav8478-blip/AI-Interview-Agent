@@ -15,8 +15,8 @@ spring:
           model: gemini-3.5-flash
           temperature: 0.3
 
-llm:
-  provider: mock
+  active:
+    profile: gemini
 
 interview:
   minimum-questions: 8
