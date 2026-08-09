@@ -3,10 +3,12 @@ package com.abtalks.interview.service;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 @Service
+@Primary
 @Profile("gemini")
 public class GeminiLLMService implements LLMService {
 
