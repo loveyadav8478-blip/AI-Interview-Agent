@@ -1,206 +1,275 @@
-# AI Prompt Engineering Log
+# PROMPTS.md — AI Usage Log
 
-This document records the prompts and AI-assisted engineering
-decisions used while building the ABTalks AI Interview Agent.
+**Project:** ABTalks AI Interview Agent
+**Team:** Ctrl Alt Elite
+**Stack:** Spring Boot + Gemini (backend) · React + Vite + Tailwind + GSAP (frontend)
 
-The prompts are versioned during development to document how
-AI behavior was designed, tested, and refined.
+This document records how AI was used to build both the backend and the
+frontend, in the order the work actually happened. The backend (interview
+planning, question generation, evaluation, feedback) was built first; the
+frontend was built on top of it afterward.
 
 ---
 
-## Prompt 001 — Interview Question Generation
+## Part 1 — Backend: Interview Engine
 
-### Purpose
+The backend implements a **deterministic planner + LLM** architecture: a
+Java-side planner decides interview strategy (follow-up or move on, which
+curriculum day, what difficulty, when to stop), and the LLM (Gemini) is only
+responsible for turning that decision into natural language, and for
+evaluating answers in structured form. This split keeps hard requirements —
+minimum 8 questions, minimum 4 curriculum days — enforced in code rather
+than left to the model's discretion.
 
-Generate one realistic technical interview question based on
-the candidate's profile, the selected curriculum topic,
-previous conversation, and the deterministic planner decision.
+### Prompt 001 — Interview Question Generation
 
-### Context Provided
+**Purpose:** Generate one realistic technical interview question based on
+the candidate's profile, the selected curriculum topic, prior conversation,
+and the planner's decision for this turn.
 
-- Candidate name
-- Job role
-- Years of experience
-- Curriculum day
-- Curriculum topic
-- Learning objectives
+**Context provided to the model:**
+- Candidate name, job role, years of experience
+- Curriculum day, topic, learning objectives
 - Interview difficulty
-- Previous conversation
-- Previous answer
-- Planner action
+- Previous conversation and previous answer
+- Planner action for this turn
 
-### Important Constraints
+**Constraints given:**
+- Generate exactly one question
+- Do not provide the answer
+- Avoid repeating previous questions
+- Match the selected difficulty
+- Stay grounded in the curriculum topic
+- Use the previous answer when generating a follow-up
 
-- Generate exactly one question.
-- Do not provide the answer.
-- Avoid repeating previous questions.
-- Match the selected difficulty.
-- Remain grounded in the curriculum topic.
-- Use previous answers when generating follow-ups.
-
-### Engineering Decision
-
-The application determines the interview strategy before
-calling the LLM. The LLM is responsible for natural-language
-question generation rather than controlling interview state.
+**Engineering decision:** The application decides interview *strategy*
+before calling the LLM. The LLM only generates natural-language phrasing —
+it does not control interview state.
 
 ---
 
-## Prompt 002 — Answer Evaluation
+### Prompt 002 — Answer Evaluation
 
-### Purpose
-
-Evaluate a candidate's answer against the relevant curriculum
+**Purpose:** Evaluate a candidate's answer against the relevant curriculum
 objectives.
 
-### Output
+**Output:** score, strengths, weaknesses, reasoning, follow-up requirement.
 
-The evaluator produces:
-
-- Score
-- Strengths
-- Weaknesses
-- Reasoning
-- Follow-up requirement
-
-### Engineering Decision
-
-Evaluation is structured so that the deterministic planner
-can use the result to decide whether to continue probing,
-change difficulty, or move to another topic.
+**Engineering decision:** Evaluation is returned in a structured form so the
+deterministic planner can use it to decide whether to probe further, change
+difficulty, or move to a new topic.
 
 ---
 
-## Prompt 003 — Technical Answer Evaluation
+### Prompt 003 — Technical Answer Evaluation
 
-### Purpose
+**Purpose:** Evaluate a candidate's answer against the specific learning
+objectives of the curriculum topic under discussion.
 
-Evaluate a candidate's answer against the learning objectives
-of the curriculum topic being discussed.
+**Inputs:** curriculum day, topic, learning objectives, the interview
+question, and the candidate's answer.
 
-### Inputs
+**Evaluation dimensions:** technical correctness, conceptual understanding,
+depth, practical reasoning, alignment with curriculum objectives.
 
-- Curriculum day
-- Topic
-- Learning objectives
-- Interview question
-- Candidate answer
+**Output:** structured JSON — `score`, `strengths`, `weaknesses`,
+`reasoning`, `followUpNeeded`.
 
-### Evaluation Dimensions
-
-- Technical correctness
-- Conceptual understanding
-- Depth
-- Practical reasoning
-- Alignment with curriculum objectives
-
-### Output
-
-The model returns structured JSON containing:
-
-- score
-- strengths
-- weaknesses
-- reasoning
-- followUpNeeded
-
-### Important Design Decision
-
-The candidate's historical learning signals are contextual
-information only. They do not directly determine the interview
-score.
-
-The actual answer is evaluated against the relevant curriculum
+**Design decision:** The candidate's historical learning signals (from their
+profile) are used as context only — they never directly affect the score.
+The score reflects the actual answer given, evaluated against curriculum
 objectives.
 
-### Why Structured Output?
-
-The planner needs machine-readable evaluation results to make
-deterministic decisions about follow-ups and difficulty.
+**Why structured output:** The planner needs machine-readable results to
+make deterministic follow-up and difficulty decisions.
 
 ---
 
-## Prompt 004 — Adaptive Question Generation
+### Prompt 004 — Adaptive Question Generation
 
-### Design Principle
+**Design principle:** The LLM does not independently decide interview
+strategy. The deterministic Interview Planner decides, ahead of the LLM
+call:
+- Whether to ask a follow-up
+- Whether to move to a new curriculum topic
+- Which curriculum day to use
+- What difficulty to use
+- Whether the interview should continue
 
-The LLM does not independently decide the interview strategy.
+The LLM receives this decision as context and converts it into natural
+interviewer language.
 
-The deterministic Interview Planner first decides:
-
-- Whether to ask a follow-up.
-- Whether to move to a new curriculum topic.
-- Which curriculum day to use.
-- What difficulty to use.
-- Whether the interview should continue.
-
-The LLM receives this decision as context and converts it
-into natural interviewer language.
-
-### Reason
-
-This prevents the model from accidentally violating hard
-application requirements such as minimum question count and
-curriculum coverage.
-
-It also makes the interview flow deterministic, testable,
-and easier to debug.
+**Reason:** Prevents the model from accidentally violating hard application
+requirements (minimum question count, minimum curriculum coverage), and
+keeps the interview flow deterministic, testable, and debuggable.
 
 ---
 
-## Prompt 005 — Structured LLM Output
+### Prompt 005 — Structured vs. Free-Text LLM Output
 
-### Question Generation
+- **Question generation** uses plain text output, since the result is shown
+  directly to the candidate.
+- **Answer evaluation** uses structured JSON output with required fields
+  `score`, `strengths`, `weaknesses`, `reasoning`, `followUpNeeded`.
 
-Question generation uses normal text output because the result
-is directly displayed to the candidate.
-
-### Answer Evaluation
-
-Answer evaluation uses structured JSON output.
-
-Required fields:
-
-- score
-- strengths
-- weaknesses
-- reasoning
-- followUpNeeded
-
-### Engineering Decision
-
-The application uses separate LLM operations for text generation
-and structured evaluation rather than relying on one generic
-generation method.
-
-This allows the application to enforce a machine-readable
-contract for evaluation results.
+**Engineering decision:** Separate LLM operations are used for generation
+versus evaluation, rather than one generic call, so a machine-readable
+contract can be enforced on evaluation results.
 
 ---
 
-## Prompt 006 — Final Interview Feedback
+### Prompt 006 — Final Interview Feedback
 
-### LLM Responsibilities
+**LLM responsibility:** qualitative feedback — summary, strengths, gaps,
+next steps.
 
-The LLM generates qualitative feedback:
+**Application responsibility:** the Java backend computes quantitative
+metrics deterministically — overall score, number of questions asked,
+number of curriculum days covered.
 
-- summary
-- strengths
-- gaps
-- next steps
+**Design decision:** Quantitative metrics are calculated from the actual
+session data rather than generated by the LLM, to prevent hallucinated
+numbers and guarantee the feedback matches what really happened in the
+interview.
 
-### Application Responsibilities
+---
 
-The Java application calculates quantitative metrics:
+## Part 2 — Frontend: React + GSAP UI
 
-- overall score
-- number of questions asked
-- number of curriculum days covered
+Built with Claude on top of the already-completed backend above. Log below
+is in the order the conversation actually happened.
 
-### Design Decision
+### 1. Initial build request
 
-Quantitative interview metrics are calculated deterministically
-from the interview session rather than generated by the LLM.
+> "want to build the leftover part can u help me build the frontend for this backend... ive already build the backend"
 
-This prevents hallucinated metrics and ensures that the final
-feedback accurately reflects the actual interview state.
+Provided the backend repo and the ABTalks frontend handoff doc.
+
+**Result:** Read the Spring Boot backend's controllers/DTOs
+(`InterviewController`, `InterviewRequest`, `InterviewResponse`, `Feedback`)
+to confirm the exact API contract, cross-checked against the handoff doc's
+recommended 3-screen flow (Candidate Selection → Interview → Final Feedback
+Report). Scaffolded a Vite + React + Tailwind project, bundled
+`candidates.json` client-side (no list-candidates endpoint exists on the
+backend), and built all three screens plus an `interviewApi.js` wrapper
+matching `POST /api/interview` exactly. Added `WebConfig.java` to the
+backend, since no CORS config existed and the browser would otherwise block
+every request from the Vite dev server.
+
+### 2. Verifying backend understanding
+
+> "hey lets discuss first then we will procced first didu understand my backend or not ?" / "do u have complete access to my backend or not" / "what should i provide u" / "what do u need to see right now"
+
+**Result:** Walked through the planner/service code file-by-file
+(`InterviewPlanner`, `CoverageManager`, `FollowUpDecisionEngine`,
+`QuestionGenerationService`, `AnswerEvaluationService`, `FeedbackService`,
+`SessionManager`) rather than inferring from filenames. Found and reported a
+real bug: `ProgressTracker.recordEvaluation()` is wired into
+`InterviewService` but never called, so per-topic mastery tracking silently
+never activates. Confirmed in-memory `ConcurrentHashMap` session storage,
+and confirmed `FeedbackService` computes `overallScore` /
+`curriculumDaysCovered` deterministically rather than trusting the LLM for
+those numbers.
+
+### 3. Rebuilding with GSAP, three named pages
+
+> "now i want build its frontend of three pages first landing page then interview page then result page using react gsap can u build it"
+
+**Result:** Renamed the three screens to `Landing.jsx`, `Interview.jsx`,
+`Result.jsx` and added `gsap` as a dependency. Built a shared `PageFade`
+entrance wrapper, a per-message GSAP entrance animation on `ChatTurn` (AI
+slides from the left, candidate from the right), a real GSAP number-tween
+for the live question counter, and a GSAP-driven SVG score dial with
+count-up on the Result page. All motion respects `prefers-reduced-motion`.
+
+### 4. Confirming backend state after user's own edits
+
+User uploaded the backend zip again with their own `CorsConfig.java` and a
+`spring.profiles.active: gemini` addition to `application.yaml`.
+
+**Result:** Diffed the new upload against the previous copy to confirm what
+actually changed (their CORS config replacing the earlier one, the Gemini
+profile flag), verified `@Profile("gemini")` on `GeminiLLMService` matches
+that yaml setting, and confirmed the frontend's `package.json` was
+untouched. Installed and built the exact uploaded frontend copy to verify it
+compiles clean. Flagged that the sandbox has no Maven Central access, so the
+Java side could only be read and reasoned about statically, not booted
+end-to-end.
+
+### 5. Visual redesign to a reference dashboard
+
+User uploaded a screenshot of an "Aura Store" admin dashboard (dark navy,
+gradient stat cards, sidebar, data table) and asked to restyle the app to
+that look using React + GSAP.
+
+**Result:** Rebuilt the design system — new Tailwind color tokens (navy base
++ blue/orange/purple/green accent gradients), switched to Inter for type.
+Built `TopBar`, `StatCard`, and `RadialProgress` as reusable components
+matching the reference's visual language. Rebuilt Landing as a proper
+dashboard — live search, four real aggregate stat cards computed from
+`candidates.json`, roster as a data table with status pills instead of a
+card grid. Deliberately did not copy the reference's literal sidebar nav
+(Dashboard/Sales/Products/etc.), since those destinations don't exist in
+this app and adding them would imply functionality that isn't there.
+
+### 6. Bug report: frontend not updating
+
+User reported the old (pre-redesign) UI still rendering.
+
+**Result:** Diagnosed as a stale local copy / cached dev server rather than
+a code issue — walked through a clean reinstall
+(`rm -rf node_modules dist`, reinstall, hard refresh).
+
+User then hit: `'vite' is not recognized...` when running `npm run dev`.
+
+**Result:** Diagnosed as `npm run dev` having been run before `npm install`
+finished — pointed to the fix (run `npm install` first), and flagged that
+`npm audit fix --force` shouldn't be run this close to the deadline since it
+can pull in breaking major version bumps.
+
+### 7. More charts on the Result page
+
+> "hey result page need to contains more charts or visuals"
+
+**Result:** Added `CoverageBars.jsx` (animated horizontal bars comparing
+actual questions-asked / curriculum-days-covered against the hackathon's
+stated minimums of 8 and 4) and `DonutChart.jsx` (a generic multi-segment
+donut, used to show the real proportion of strengths / gaps / next-steps
+counts from the feedback object). Deliberately did not add a per-question
+score chart or per-day radar, since the backend's API contract (`sessionId`,
+`reply`, `done`, `feedback`) doesn't return per-turn scores or which
+specific days were covered — a chart like that would have had to invent
+numbers the backend never sends.
+
+### 8. Layout bug: content pushed off-screen
+
+User reported the Interview page's Send button being cut off at the bottom
+of the viewport.
+
+**Result:** Diagnosed as the classic flex/grid `min-height: auto` bug — the
+right-hand rail's stacked cards were growing past the intended height and
+dragging the whole page taller than the viewport, since `overflow-hidden` on
+a flex/grid parent doesn't stop a child from refusing to shrink by default.
+Fixed by adding `min-h-0` to the grid row and chat panel, and giving the
+right rail its own independent `overflow-y-auto` so it scrolls internally
+instead of pushing the page.
+
+---
+
+## Reflection: How we steered the AI
+
+The backend was designed around a clear separation of responsibility: a
+deterministic Java planner controls interview *strategy* (follow-ups,
+topic/day selection, difficulty, stopping condition, minimum coverage), while
+the LLM is scoped narrowly to two jobs — generating natural-language
+questions and producing structured, machine-readable answer evaluations.
+This was a deliberate choice to keep hard requirements (≥8 questions, ≥4
+curriculum days, non-hallucinated final metrics) enforced in code rather
+than trusted to model behavior.
+
+On the frontend, AI was steered by always grounding changes in the actual
+backend contract rather than assumptions — reading real controller/DTO code
+before building the API wrapper, verifying every re-upload with a diff
+instead of trusting a description of what changed, and deliberately leaving
+out visualizations (e.g. a per-question score chart) that would have
+required inventing data the backend doesn't return.
