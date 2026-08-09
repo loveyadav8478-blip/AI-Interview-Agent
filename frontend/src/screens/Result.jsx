@@ -1,75 +1,19 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import Button from "../components/Button.jsx";
+import RadialProgress from "../components/RadialProgress.jsx";
+import DonutChart from "../components/DonutChart.jsx";
+import CoverageBars from "../components/CoverageBars.jsx";
+import TopBar from "../components/TopBar.jsx";
 
-const RADIUS = 54;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const COLUMN_STYLE = {
+  green: { dot: "bg-green", chip: "bg-green/15 text-green-glow" },
+  orange: { dot: "bg-orange", chip: "bg-orange/15 text-orange-glow" },
+  blue: { dot: "bg-blue", chip: "bg-blue/15 text-blue-glow" },
+};
 
-function ScoreDial({ score }) {
-  const circleRef = useRef(null);
-  const numberRef = useRef(null);
-
-  useLayoutEffect(() => {
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const pct = Math.max(0, Math.min(10, score ?? 0)) / 10;
-    const targetOffset = CIRCUMFERENCE * (1 - pct);
-
-    if (!circleRef.current) return;
-
-    if (reduceMotion) {
-      circleRef.current.style.strokeDashoffset = targetOffset;
-      if (numberRef.current) numberRef.current.textContent = (score ?? 0).toFixed(1);
-      return;
-    }
-
-    gsap.set(circleRef.current, { strokeDashoffset: CIRCUMFERENCE });
-
-    const obj = { val: 0 };
-    gsap.to(circleRef.current, {
-      strokeDashoffset: targetOffset,
-      duration: 1.1,
-      delay: 0.2,
-      ease: "power3.out",
-    });
-    gsap.to(obj, {
-      val: score ?? 0,
-      duration: 1.1,
-      delay: 0.2,
-      ease: "power3.out",
-      onUpdate: () => {
-        if (numberRef.current) numberRef.current.textContent = obj.val.toFixed(1);
-      },
-    });
-  }, [score]);
-
-  return (
-    <div className="relative flex h-40 w-40 items-center justify-center">
-      <svg width="160" height="160" viewBox="0 0 120 120" className="-rotate-90">
-        <circle cx="60" cy="60" r={RADIUS} fill="none" stroke="#252B3A" strokeWidth="6" />
-        <circle
-          ref={circleRef}
-          cx="60"
-          cy="60"
-          r={RADIUS}
-          fill="none"
-          stroke="#F2B84B"
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={CIRCUMFERENCE}
-        />
-      </svg>
-      <div className="absolute flex flex-col items-center">
-        <span ref={numberRef} className="font-display text-4xl text-paper">
-          0.0
-        </span>
-        <span className="font-mono text-[11px] uppercase tracking-widest text-paper-faint">/ 10</span>
-      </div>
-    </div>
-  );
-}
-
-function ReportColumn({ label, items, accent }) {
-  const dot = { teal: "bg-teal", coral: "bg-coral", signal: "bg-signal" }[accent];
+function ReportColumn({ label, items, accent, icon }) {
+  const style = COLUMN_STYLE[accent];
   const listRef = useRef(null);
 
   useLayoutEffect(() => {
@@ -79,23 +23,24 @@ function ReportColumn({ label, items, accent }) {
     gsap.fromTo(
       listRef.current.querySelectorAll("li"),
       { opacity: 0, x: -8 },
-      { opacity: 1, x: 0, duration: 0.4, stagger: 0.06, delay: 0.6, ease: "power2.out" }
+      { opacity: 1, x: 0, duration: 0.4, stagger: 0.06, delay: 0.5, ease: "power2.out" }
     );
   }, []);
 
   return (
-    <div className="rounded-sm border border-ink-hair bg-ink-raised p-5">
-      <p className="eyebrow mb-4">{label}</p>
+    <div className="rounded-xl2 border border-base-hair bg-base-surface p-5 shadow-panel">
+      <div className="mb-4 flex items-center gap-2">
+        <span className={`flex h-7 w-7 items-center justify-center rounded-lg text-xs ${style.chip}`}>{icon}</span>
+        <p className="eyebrow">{label}</p>
+      </div>
       <ul ref={listRef} className="space-y-3">
         {(items || []).map((item, i) => (
-          <li key={i} className="flex gap-3 text-sm leading-relaxed text-paper-dim">
-            <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+          <li key={i} className="flex gap-3 text-sm leading-relaxed text-text-dim">
+            <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
             <span>{item}</span>
           </li>
         ))}
-        {(!items || items.length === 0) && (
-          <li className="text-sm text-paper-faint">Nothing recorded.</li>
-        )}
+        {(!items || items.length === 0) && <li className="text-sm text-text-faint">Nothing recorded.</li>}
       </ul>
     </div>
   );
@@ -109,12 +54,10 @@ export default function Result({ candidate, feedback, onRestart }) {
     if (reduceMotion || !rootRef.current) return;
 
     const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-
-      tl.fromTo(
+      gsap.fromTo(
         rootRef.current.querySelectorAll("[data-block]"),
         { opacity: 0, y: 16 },
-        { opacity: 1, y: 0, duration: 0.5, stagger: 0.1 }
+        { opacity: 1, y: 0, duration: 0.5, stagger: 0.09, ease: "power3.out" }
       );
     }, rootRef);
 
@@ -122,43 +65,87 @@ export default function Result({ candidate, feedback, onRestart }) {
   }, []);
 
   return (
-    <div ref={rootRef} className="mx-auto max-w-4xl px-6 py-14 md:py-20">
-      <header data-block className="mb-10">
-        <p className="eyebrow mb-3">Interview Complete · {candidate?.id}</p>
-        <h1 className="font-display text-3xl md:text-4xl text-paper">
-          Assessment for {candidate?.name}
-        </h1>
-      </header>
+    <div ref={rootRef} className="mx-auto max-w-5xl px-6 py-8 md:py-10">
+      <div data-block>
+        <TopBar
+          eyebrow={`Interview Complete · ${candidate?.id ?? ""}`}
+          title={`Assessment for ${candidate?.name ?? "Candidate"}`}
+          subtitle={candidate?.jobRole}
+          accent="purple"
+        />
+      </div>
 
-      <div
-        data-block
-        className="mb-10 flex flex-col items-center gap-8 rounded-sm border border-ink-hair bg-ink-raised p-8 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <ScoreDial score={feedback?.overallScore} />
-        <div className="flex flex-1 gap-8 sm:justify-end">
-          <div>
-            <p className="font-display text-3xl text-paper">{feedback?.questionsAsked ?? "—"}</p>
-            <p className="eyebrow mt-1">Questions asked</p>
-          </div>
-          <div>
-            <p className="font-display text-3xl text-paper">{feedback?.curriculumDaysCovered ?? "—"}</p>
-            <p className="eyebrow mt-1">Curriculum days</p>
+      <div data-block className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="rounded-xl2 border border-blue/30 bg-gradient-to-br from-blue/20 to-blue/5 p-5 shadow-panel">
+          <RadialProgress value={feedback?.overallScore ?? 0} max={10} size={64} accent="blue" centerSuffix="/10" />
+          <p className="eyebrow mt-3">Overall score</p>
+        </div>
+        <div className="rounded-xl2 border border-green/30 bg-gradient-to-br from-green/20 to-green/5 p-5 shadow-panel">
+          <p className="font-display text-2xl font-semibold text-text">{feedback?.questionsAsked ?? "—"}</p>
+          <p className="eyebrow mt-1">Questions asked</p>
+        </div>
+        <div className="rounded-xl2 border border-purple/30 bg-gradient-to-br from-purple/20 to-purple/5 p-5 shadow-panel">
+          <p className="font-display text-2xl font-semibold text-text">{feedback?.curriculumDaysCovered ?? "—"}</p>
+          <p className="eyebrow mt-1">Curriculum days</p>
+        </div>
+        <div className="rounded-xl2 border border-orange/30 bg-gradient-to-br from-orange/20 to-orange/5 p-5 shadow-panel">
+          <p className="font-mono text-sm font-medium text-text truncate">{candidate?.id ?? "—"}</p>
+          <p className="eyebrow mt-1">Candidate</p>
+        </div>
+      </div>
+
+      <div data-block className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
+        <div className="rounded-xl2 border border-base-hair bg-base-surface p-6 shadow-panel">
+          <p className="eyebrow mb-4">Coverage vs requirements</p>
+          <CoverageBars
+            questionsAsked={feedback?.questionsAsked}
+            minQuestions={8}
+            daysCovered={feedback?.curriculumDaysCovered}
+            minDays={4}
+          />
+        </div>
+
+        <div className="rounded-xl2 border border-base-hair bg-base-surface p-6 shadow-panel">
+          <p className="eyebrow mb-4">Feedback composition</p>
+          <div className="flex items-center gap-6">
+            <DonutChart
+              size={104}
+              strokeWidth={14}
+              segments={[
+                { label: "Strengths", value: (feedback?.strengths || []).length, color: "#34D399" },
+                { label: "Gaps", value: (feedback?.gaps || []).length, color: "#FF7A5C" },
+                { label: "Next steps", value: (feedback?.next || []).length, color: "#4F7DFF" },
+              ]}
+            />
+            <ul className="space-y-2">
+              {[
+                { label: "Strengths", value: (feedback?.strengths || []).length, dot: "bg-green" },
+                { label: "Gaps", value: (feedback?.gaps || []).length, dot: "bg-orange" },
+                { label: "Next steps", value: (feedback?.next || []).length, dot: "bg-blue" },
+              ].map((row) => (
+                <li key={row.label} className="flex items-center gap-2 text-sm">
+                  <span className={`h-2 w-2 rounded-full ${row.dot}`} />
+                  <span className="text-text-dim">{row.label}</span>
+                  <span className="font-mono text-xs text-text-faint">{row.value}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>
 
-      <div data-block className="mb-10 rounded-sm border border-ink-hair bg-ink-raised p-6">
+      <div data-block className="mt-6 rounded-xl2 border border-base-hair bg-base-surface p-6 shadow-panel">
         <p className="eyebrow mb-3">Overall assessment</p>
-        <p className="text-[15px] leading-relaxed text-paper">{feedback?.summary}</p>
+        <p className="text-[15px] leading-relaxed text-text">{feedback?.summary}</p>
       </div>
 
-      <div data-block className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <ReportColumn label="Strengths" items={feedback?.strengths} accent="teal" />
-        <ReportColumn label="Areas to improve" items={feedback?.gaps} accent="coral" />
-        <ReportColumn label="Recommended next steps" items={feedback?.next} accent="signal" />
+      <div data-block className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <ReportColumn label="Strengths" items={feedback?.strengths} accent="green" icon="✓" />
+        <ReportColumn label="Areas to improve" items={feedback?.gaps} accent="orange" icon="!" />
+        <ReportColumn label="Recommended next steps" items={feedback?.next} accent="blue" icon="→" />
       </div>
 
-      <div data-block className="mt-12 flex justify-center">
+      <div data-block className="mt-10 flex justify-center">
         <Button variant="ghost" onClick={onRestart}>
           Start another interview
         </Button>

@@ -30,10 +30,10 @@ export default function ChatTurn({ role, content, questionNumber }) {
         )}
       </div>
       <div
-        className={`max-w-[36rem] rounded-sm px-4 py-3 text-[15px] leading-relaxed ${
+        className={`max-w-[36rem] rounded-xl px-4 py-3 text-[15px] leading-relaxed ${
           isAI
-            ? "bg-ink-panel border border-ink-hair text-paper rounded-tl-none"
-            : "bg-signal-soft border border-signal/30 text-paper rounded-tr-none"
+            ? "bg-base-raised border border-base-hair text-text rounded-tl-none"
+            : "bg-blue-soft border border-blue/30 text-text rounded-tr-none"
         }`}
       >
         {content}

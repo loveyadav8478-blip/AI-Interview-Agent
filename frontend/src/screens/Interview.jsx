@@ -1,47 +1,23 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import gsap from "gsap";
+import { useEffect, useRef, useState } from "react";
 import ChatTurn from "../components/ChatTurn.jsx";
 import Button from "../components/Button.jsx";
 import OnAirDot from "../components/OnAirDot.jsx";
 import ErrorBanner from "../components/ErrorBanner.jsx";
 import MissionStrip from "../components/MissionStrip.jsx";
+import RadialProgress from "../components/RadialProgress.jsx";
+import TopBar from "../components/TopBar.jsx";
 import PageFade from "../components/PageFade.jsx";
 
 export default function Interview({ candidate, sessionId, messages, onSubmit, loading, error, onDismissError }) {
   const [answer, setAnswer] = useState("");
   const scrollRef = useRef(null);
-  const counterRef = useRef(null);
-  const counterValue = useRef(0);
 
   const questionCount = messages.filter((m) => m.role === "assistant").length;
+  const cohortRate = candidate?.total ? (candidate.completed / candidate.total) * 10 : 0;
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
-
-  useLayoutEffect(() => {
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!counterRef.current) return;
-
-    if (reduceMotion) {
-      counterRef.current.textContent = questionCount;
-      counterValue.current = questionCount;
-      return;
-    }
-
-    const obj = { val: counterValue.current };
-    gsap.to(obj, {
-      val: questionCount,
-      duration: 0.5,
-      ease: "power2.out",
-      onUpdate: () => {
-        counterRef.current.textContent = Math.round(obj.val);
-      },
-      onComplete: () => {
-        counterValue.current = questionCount;
-      },
-    });
-  }, [questionCount]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -53,28 +29,22 @@ export default function Interview({ candidate, sessionId, messages, onSubmit, lo
 
   return (
     <PageFade className="mx-auto flex h-screen max-w-6xl flex-col px-6 py-6 md:py-8">
-      <header className="mb-5 flex items-center justify-between border-b border-ink-hair pb-4">
-        <div>
-          <p className="eyebrow mb-1">The Interview Agent</p>
-          <div className="flex items-center gap-2">
+      <TopBar
+        eyebrow="Live Session"
+        title={candidate?.name || "Candidate"}
+        subtitle={candidate?.jobRole}
+        accent="green"
+        right={
+          <div className="flex items-center gap-2 rounded-lg border border-base-hair bg-base-surface px-3.5 py-2">
             <OnAirDot active={loading} />
-            <h1 className="font-display text-xl text-paper">
-              {candidate?.name || "Candidate"}
-            </h1>
-            <span className="font-mono text-xs text-paper-faint">{candidate?.id}</span>
+            <span className="font-mono text-sm text-blue-glow">{questionCount}</span>
+            <span className="font-mono text-xs text-text-faint">/ 8+ questions</span>
           </div>
-        </div>
-        <div className="text-right">
-          <p className="eyebrow mb-1">Question</p>
-          <p className="font-mono text-lg text-signal">
-            <span ref={counterRef}>0</span>
-            <span className="text-paper-faint text-sm"> / 8+</span>
-          </p>
-        </div>
-      </header>
+        }
+      />
 
-      <div className="grid flex-1 grid-cols-1 gap-6 overflow-hidden md:grid-cols-[1fr_260px]">
-        <div className="flex flex-col overflow-hidden rounded-sm border border-ink-hair bg-ink-raised">
+      <div className="mt-6 grid min-h-0 flex-1 grid-cols-1 gap-6 md:grid-cols-[1fr_280px]">
+        <div className="flex min-h-0 flex-col overflow-hidden rounded-xl2 border border-base-hair bg-base-surface shadow-panel">
           <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
             {messages.map((m, i) => (
               <ChatTurn
@@ -104,7 +74,7 @@ export default function Interview({ candidate, sessionId, messages, onSubmit, lo
               disabled={loading}
               placeholder="Type your technical answer… (Enter to send, Shift+Enter for a new line)"
               rows={2}
-              className="flex-1 resize-none rounded-sm border border-ink-hair bg-ink px-3.5 py-2.5 text-[15px] text-paper placeholder:text-paper-faint focus:border-signal focus:outline-none disabled:opacity-50"
+              className="flex-1 resize-none rounded-lg border border-base-hair bg-base px-3.5 py-2.5 text-[15px] text-text placeholder:text-text-faint focus:border-blue focus:outline-none disabled:opacity-50"
             />
             <Button type="submit" disabled={!answer.trim() || loading}>
               Send
@@ -112,26 +82,40 @@ export default function Interview({ candidate, sessionId, messages, onSubmit, lo
           </form>
         </div>
 
-        <aside className="hidden flex-col gap-4 md:flex">
-          <div className="rounded-sm border border-ink-hair bg-ink-raised p-4">
-            <p className="eyebrow mb-3">Candidate dossier</p>
-            <p className="font-display text-base text-paper">{candidate?.name}</p>
-            <p className="mb-3 text-sm text-paper-dim">{candidate?.jobRole}</p>
-            <p className="mb-1 font-mono text-xs text-paper-faint">
-              {candidate?.completed}/{candidate?.total} missions completed
-              {candidate?.skipped ? ` · ${candidate.skipped} skipped` : ""}
-            </p>
-            {candidate?.missions && <MissionStrip missions={candidate.missions} size="lg" />}
+        <aside className="hidden min-h-0 flex-col gap-4 overflow-y-auto pr-1 md:flex">
+          <div className="rounded-xl2 border border-base-hair bg-base-surface p-5 shadow-panel">
+            <p className="eyebrow mb-3">Cohort record</p>
+            <div className="flex items-center gap-4">
+              <RadialProgress
+                value={cohortRate}
+                max={10}
+                size={72}
+                accent="green"
+                centerValue={`${candidate?.completed ?? 0}/${candidate?.total ?? 0}`}
+              />
+              <div>
+                <p className="font-display text-sm font-medium text-text">{candidate?.name}</p>
+                <p className="text-xs text-text-dim">{candidate?.jobRole}</p>
+                {candidate?.skipped > 0 && (
+                  <p className="mt-1 font-mono text-[11px] text-orange-glow">{candidate.skipped} skipped</p>
+                )}
+              </div>
+            </div>
+            {candidate?.missions && (
+              <div className="mt-4">
+                <MissionStrip missions={candidate.missions} size="lg" />
+              </div>
+            )}
           </div>
 
-          <div className="rounded-sm border border-ink-hair bg-ink-raised p-4">
+          <div className="rounded-xl2 border border-base-hair bg-base-surface p-5 shadow-panel">
             <p className="eyebrow mb-2">Session</p>
-            <p className="break-all font-mono text-xs text-paper-faint">{sessionId}</p>
+            <p className="break-all font-mono text-xs text-text-faint">{sessionId}</p>
           </div>
 
-          <div className="rounded-sm border border-ink-hair bg-ink-raised p-4">
+          <div className="rounded-xl2 border border-base-hair bg-base-surface p-5 shadow-panel">
             <p className="eyebrow mb-2">Bar for completion</p>
-            <p className="text-sm text-paper-dim">
+            <p className="text-sm text-text-dim">
               At least 8 questions across 4+ curriculum days. The agent
               decides when it has enough signal — this screen won't guess.
             </p>

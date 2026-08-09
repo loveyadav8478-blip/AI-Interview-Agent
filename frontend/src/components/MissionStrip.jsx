@@ -1,7 +1,7 @@
 /**
  * Renders the candidate's real 31-day cohort record as a strip of cells —
- * one per curriculum day. This is built entirely from the supplied
- * candidates.json (mission day + passed/skipped), nothing invented.
+ * one per curriculum day. Built entirely from the supplied candidates.json
+ * (mission day + passed/skipped), nothing invented.
  */
 export default function MissionStrip({ missions, size = "sm" }) {
   const byDay = new Map(missions.map((m) => [m.day, m]));
@@ -11,9 +11,9 @@ export default function MissionStrip({ missions, size = "sm" }) {
     <div className="flex gap-[3px]" role="img" aria-label="31-day cohort mission record">
       {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
         const mission = byDay.get(day);
-        let cls = "bg-ink-hair";
-        if (mission?.passed) cls = "bg-teal";
-        else if (mission?.skipped) cls = "bg-coral/70";
+        let cls = "bg-base-hair";
+        if (mission?.passed) cls = "bg-green";
+        else if (mission?.skipped) cls = "bg-orange/70";
 
         return (
           <span

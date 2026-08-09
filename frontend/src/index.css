@@ -4,7 +4,7 @@
 
 @layer base {
   * {
-    @apply border-ink-hair;
+    @apply border-base-hair;
   }
 
   html {
@@ -12,21 +12,22 @@
   }
 
   body {
-    @apply bg-ink text-paper font-body antialiased;
-    background-image: radial-gradient(circle at 12% -10%, rgba(242, 184, 75, 0.06), transparent 45%),
-      radial-gradient(circle at 100% 0%, rgba(65, 186, 174, 0.05), transparent 40%);
+    @apply bg-base text-text font-body antialiased;
+    background-image: radial-gradient(circle at 15% -10%, rgba(79, 125, 255, 0.10), transparent 40%),
+      radial-gradient(circle at 100% 0%, rgba(155, 123, 255, 0.08), transparent 35%),
+      radial-gradient(circle at 50% 100%, rgba(52, 211, 153, 0.05), transparent 40%);
     background-attachment: fixed;
   }
 
   ::selection {
-    background: rgba(242, 184, 75, 0.25);
+    background: rgba(79, 125, 255, 0.3);
     color: #fff;
   }
 
   :focus-visible {
-    outline: 2px solid #f2b84b;
+    outline: 2px solid #4f7dff;
     outline-offset: 2px;
-    border-radius: 2px;
+    border-radius: 4px;
   }
 
   ::-webkit-scrollbar {
@@ -37,19 +38,37 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #252b3a;
+    background: #242938;
     border-radius: 999px;
   }
 }
 
 @layer utilities {
   .eyebrow {
-    @apply font-mono text-[11px] tracking-[0.18em] uppercase text-paper-dim;
+    @apply font-mono text-[10.5px] tracking-[0.16em] uppercase text-text-dim;
   }
 
   .hairline {
-    @apply border-t border-ink-hair;
+    @apply border-t border-base-hair;
   }
+
+  .glass {
+    @apply bg-base-surface/80 backdrop-blur border border-base-hair;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise {
+  animation: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
