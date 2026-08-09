@@ -3,8 +3,8 @@ package com.abtalks.interview.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import java.util.List;
 public class CorsConfig {
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsFilter corsFilter() {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
@@ -39,6 +39,6 @@ public class CorsConfig {
 
         source.registerCorsConfiguration("/**", configuration);
 
-        return source;
+        return new CorsFilter(source);
     }
 }

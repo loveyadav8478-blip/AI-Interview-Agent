@@ -11,6 +11,19 @@ import java.time.Instant;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(InterviewCompleteException.class)
+    public ResponseEntity<ApiError> handleInterviewComplete(
+            InterviewCompleteException exception,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatus.CONFLICT,
+                "Interview Already Completed",
+                exception.getMessage(),
+                request
+        );
+    }
+
     @ExceptionHandler(CandidateNotFoundException.class)
     public ResponseEntity<ApiError> handleCandidateNotFound(
             CandidateNotFoundException exception,

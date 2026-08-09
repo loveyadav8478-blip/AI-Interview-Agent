@@ -51,24 +51,35 @@ public class InterviewService {
         this.feedbackService = feedbackService;
     }
 
-    public InterviewResponse handleRequest(
-            InterviewRequest request) {
-        Candidate candidate = candidateRepository
-                .findById(request.getCandidate())
-                .orElseThrow(() ->
-                        new CandidateNotFoundException(
-                                "Candidate not found: " + request.getCandidate()
-                        )
-                );
+//    public InterviewResponse handleRequest(
+//            InterviewRequest request) {
+//        Candidate candidate = candidateRepository
+//                .findById(request.getCandidate())
+//                .orElseThrow(() ->
+//                        new CandidateNotFoundException(
+//                                "Candidate not found: " + request.getCandidate()
+//                        )
+//                );
+//
+//        if (request.getSessionId() == null
+//                || request.getSessionId().isBlank()) {
+//
+//            return startInterview(request);
+//        }
+//
+//        return continueInterview(request);
+//    }
+public InterviewResponse handleRequest(
+        InterviewRequest request) {
 
-        if (request.getSessionId() == null
-                || request.getSessionId().isBlank()) {
+    if (request.getSessionId() == null
+            || request.getSessionId().isBlank()) {
 
-            return startInterview(request);
-        }
-
-        return continueInterview(request);
+        return startInterview(request);
     }
+
+    return continueInterview(request);
+}
 
     private InterviewResponse startInterview(InterviewRequest request) {
 
@@ -111,9 +122,33 @@ public class InterviewService {
         session.getProgress()
                 .setQuestionCount(1);
 
+//        session.setStatus(InterviewStatus.ONGOING);
+//
+//        sessionManager.updateSession(session);
         session.setStatus(InterviewStatus.ONGOING);
 
         sessionManager.updateSession(session);
+
+        System.out.println(
+                "========== SESSION CREATED =========="
+        );
+
+        System.out.println(
+                "Session ID : " + session.getSessionId()
+        );
+
+        System.out.println(
+                "Status     : " + session.getStatus()
+        );
+
+        System.out.println(
+                "Questions  : " +
+                        session.getProgress().getQuestionCount()
+        );
+
+        System.out.println(
+                "======================================"
+        );
 
         return InterviewResponse.builder()
                 .sessionId(sessionId)
@@ -131,15 +166,45 @@ public class InterviewService {
                         .orElseThrow(() ->
                                 new SessionNotFoundException("Interview session not found: " +
                                         request.getSessionId()));
+        System.out.println(
+                "========== SESSION RETRIEVED =========="
+        );
 
-        if (session.getStatus()
-                == InterviewStatus.COMPLETED) {
+        System.out.println(
+                "Session ID : " + session.getSessionId()
+        );
+
+        System.out.println(
+                "Status     : " + session.getStatus()
+        );
+
+        System.out.println(
+                "Questions  : " +
+                        session.getProgress().getQuestionCount()
+        );
+
+        System.out.println(
+                "========================================"
+        );
+
+//        if (session.getStatus()
+//                == InterviewStatus.COMPLETED) {
+//
+//            throw new InterviewCompleteException(
+//                    "Interview is already completed"
+//            );
+//        }
+
+        if (session.getStatus() == InterviewStatus.COMPLETED) {
+
+            System.out.println(
+                    "!!! SESSION IS ALREADY COMPLETED !!!"
+            );
 
             throw new InterviewCompleteException(
                     "Interview is already completed"
             );
         }
-
         ConversationTurn currentTurn =
                 getCurrentTurn(session);
 
